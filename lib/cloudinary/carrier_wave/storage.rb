@@ -114,6 +114,6 @@ class Cloudinary::CarrierWave::Storage < ::CarrierWave::Storage::Abstract
   end
 
   def raw_attribute_value
-    uploader.model.attributes[column.to_s]
+    (uploader.model.attributes[column.to_s] || [])
   end
 end
