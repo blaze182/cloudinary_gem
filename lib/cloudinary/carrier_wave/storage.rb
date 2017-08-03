@@ -72,13 +72,14 @@ class Cloudinary::CarrierWave::Storage < ::CarrierWave::Storage::Abstract
     
     if defined?(ActiveRecord::Base) && uploader.model.is_a?(ActiveRecord::Base)
       primary_key = model_class.primary_key.to_sym
+      value = singular_uploader? ? name : raw_attribute_value + [name]
       if defined?(::ActiveRecord::VERSION::MAJOR) && ::ActiveRecord::VERSION::MAJOR > 2
-        model_class.where(primary_key=>uploader.model.send(primary_key)).update_all(column=>name)
+        uploader.model.update_column(column, value)
       else
         # Removed since active record version 3.0.0
-        model_class.update_all({column=>name}, {primary_key=>uploader.model.send(primary_key)})
+        model_class.update_all({column=>value}, {primary_key=>uploader.model.send(primary_key)})
       end
-      uploader.model.send :write_attribute, column, name
+      uploader.model.send :write_attribute, column, value
     elsif defined?(Mongoid::Document) && uploader.model.is_a?(Mongoid::Document)
       # Mongoid support
       if Mongoid::VERSION.split(".").first.to_i >= 4
@@ -101,10 +102,18 @@ class Cloudinary::CarrierWave::Storage < ::CarrierWave::Storage::Abstract
     end
   end
 
+  def singular_uploader?
+    !uploader.model.public_send(column).is_a?(Array)
+  end
+
   def column
     @column ||=
       uploader.model.
         send(:_mounter, uploader.mounted_as).
         send(:serialization_column)
+  end
+
+  def raw_attribute_value
+    uploader.model.attributes[column.to_s]
   end
 end
