@@ -69,7 +69,7 @@ class Cloudinary::CarrierWave::Storage < ::CarrierWave::Storage::Abstract
       name = "#{resource_type}/#{type}/#{name}"
     end
     model_class = uploader.model.class
-    column = uploader.model.send(:_mounter, uploader.mounted_as).send(:serialization_column)
+    
     if defined?(ActiveRecord::Base) && uploader.model.is_a?(ActiveRecord::Base)
       primary_key = model_class.primary_key.to_sym
       if defined?(::ActiveRecord::VERSION::MAJOR) && ::ActiveRecord::VERSION::MAJOR > 2
@@ -82,7 +82,7 @@ class Cloudinary::CarrierWave::Storage < ::CarrierWave::Storage::Abstract
     elsif defined?(Mongoid::Document) && uploader.model.is_a?(Mongoid::Document)
       # Mongoid support
       if Mongoid::VERSION.split(".").first.to_i >= 4
-        column = column.to_sym
+        
         uploader.model.write_attribute(column, name)
         uploader.model.set(column => name)
       else
@@ -99,5 +99,12 @@ class Cloudinary::CarrierWave::Storage < ::CarrierWave::Storage::Abstract
     else
       raise CloudinaryException, "Only ActiveRecord, Mongoid and Sequel are supported at the moment!"
     end
+  end
+
+  def column
+    @column ||=
+      uploader.model.
+        send(:_mounter, uploader.mounted_as).
+        send(:serialization_column)
   end
 end
