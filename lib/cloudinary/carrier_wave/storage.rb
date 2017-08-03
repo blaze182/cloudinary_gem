@@ -72,7 +72,16 @@ class Cloudinary::CarrierWave::Storage < ::CarrierWave::Storage::Abstract
     
     if defined?(ActiveRecord::Base) && uploader.model.is_a?(ActiveRecord::Base)
       primary_key = model_class.primary_key.to_sym
-      value = singular_uploader? ? name : raw_attribute_value + [name]
+      value =
+        if singular_uploader?
+          name
+        else
+          if raw_attribute_value.include?(filename)
+            raw_attribute_value.map { |item| item == filename ? name : item }
+          else
+            raw_attribute_value + [name]
+          end
+        end
       if defined?(::ActiveRecord::VERSION::MAJOR) && ::ActiveRecord::VERSION::MAJOR > 2
         uploader.model.update_column(column, value)
       else
